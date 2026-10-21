@@ -5,6 +5,7 @@ The labelling workflow. ← UNIT 5, MILESTONE 4
 Four steps, in order. Each refuses to run until the one before it is done.
 
     python labelling.py prepare    # reserve the cold 20, write the files to label
+    python labelling.py cold       # label the cold 20 by hand, no suggestions shown
     python labelling.py review     # walk every AI pre-label: accept or correct
     python labelling.py build      # merge cold + reviewed into labels.csv
     python labelling.py check      # validate labels.csv against the brief
@@ -49,6 +50,11 @@ TO_PRELABEL = Path("data/to_prelabel.csv")
 PRELABELS = Path("data/prelabels.csv")
 LABELS_CSV = Path("labels.csv")
 PROVENANCE = Path("data/labels_with_provenance.csv")
+
+# The dataset is the two general fitness communities. running@lemmy.world was
+# collected too, and is kept in data/raw, but left out: it is mostly link
+# shares and race reports, a second community with its own style.
+INCLUDED_SOURCES = ("fitness@lemmy.world", "fitness@lemmy.ml")
 
 COLD_NOTE = "cold"
 MAX_SHARE = 0.70
@@ -146,6 +152,7 @@ def cmd_prepare(args, pd):
                          f"--force only if nothing has been labelled yet.")
 
     posts = pd.read_csv(PROCESSED)
+    posts = posts[posts["source"].isin(INCLUDED_SOURCES)]
     cold_ids, rest_ids = reserve_cold(posts["id"].tolist())
 
     by_id = posts.set_index("id")
@@ -156,8 +163,43 @@ def cmd_prepare(args, pd):
 
     print(f"Reserved {len(cold)} cold posts → {COLD}")
     print(f"{len(rest_ids)} posts for pre-labelling → {TO_PRELABEL}")
-    print(f"\nFill the `label` column of {COLD} by hand, using one of:")
+    print(f"\nLabel them with `python labelling.py cold`, or fill the `label`")
+    print(f"column of {COLD} by hand, using one of:")
     print("  " + ", ".join(load_label_names()))
+
+
+def cmd_cold(args, pd):
+    """Label the cold 20 one at a time. No suggestion is shown, by design."""
+    if not COLD.exists():
+        raise SystemExit(f"No {COLD}. Run `python labelling.py prepare` first.")
+    labels = load_label_names()
+    df = pd.read_csv(COLD, dtype=str).fillna("")
+    pending = [i for i in df.index if not df.at[i, "label"].strip()]
+    print(f"{len(df) - len(pending)} of {len(df)} cold posts labelled. {len(pending)} to go.")
+    print("Definitions are in label_definitions.txt and the README. No AI suggestion here.\n")
+    menu = "  ".join(f"[{n}] {name}" for n, name in enumerate(labels, 1))
+
+    for done, i in enumerate(pending, 1):
+        print("─" * 72)
+        print(f"cold {done}/{len(pending)}   {df.at[i, 'url']}\n")
+        print(df.at[i, "text"])
+        print(f"\n{menu}")
+        while True:
+            choice = input("number = label · s = skip · q = quit > ").strip().lower()
+            if choice == "q":
+                df.to_csv(COLD, index=False)
+                print("Saved. Resume with `python labelling.py cold`.")
+                return
+            if choice == "s":
+                break
+            if choice.isdigit() and 1 <= int(choice) <= len(labels):
+                df.at[i, "label"] = labels[int(choice) - 1]
+                df.to_csv(COLD, index=False)
+                break
+            print("  ?")
+
+    left = int((df["label"].str.strip() == "").sum())
+    print(f"\nDone for now. {left} cold posts still unlabelled.")
 
 
 def cmd_review(args, pd):
@@ -264,6 +306,7 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("prepare")
     p.add_argument("--force", action="store_true")
+    sub.add_parser("cold")
     sub.add_parser("review")
     b = sub.add_parser("build")
     b.add_argument("--allow-unreviewed", action="store_true",
@@ -272,7 +315,7 @@ def main():
     args = parser.parse_args()
 
     import pandas as pd
-    handler = {"prepare": cmd_prepare, "review": cmd_review,
+    handler = {"prepare": cmd_prepare, "cold": cmd_cold, "review": cmd_review,
                "build": cmd_build, "check": cmd_check}[args.command]
     return handler(args, pd) or 0
 
