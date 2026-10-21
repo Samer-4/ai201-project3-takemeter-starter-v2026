@@ -10,6 +10,7 @@ dataset.
 """
 
 import json
+import random
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +22,14 @@ import labelling
 
 ROOT = Path(__file__).resolve().parent
 LABELS = ["a", "b", "c"]
+WORDS = ("squat bench deadlift row press curl plank lunge sprint jog swim bike hike "
+         "stretch protein sleep cardio grip core back chest legs arms rest").split()
+
+
+def distinct_texts(n, seed=0):
+    """n fixture posts that share no near-identical pair."""
+    rng = random.Random(seed)
+    return [" ".join(rng.sample(WORDS, 12)) + f" {i}" for i in range(n)]
 
 
 def notebook_function(name):
@@ -96,7 +105,7 @@ class Validation(unittest.TestCase):
     def frame(self, n=200, labels=None, notes=None):
         labels = labels or [LABELS[i % 3] for i in range(n)]
         notes = notes or (["cold"] * 20 + ["pre-labelled by AI, human accepted"] * (n - 20))
-        return pd.DataFrame({"text": [f"post number {i}" for i in range(n)],
+        return pd.DataFrame({"text": distinct_texts(n),
                              "label": labels, "note": notes})
 
     def test_clean_frame_passes(self):
@@ -114,6 +123,18 @@ class Validation(unittest.TestCase):
         joined = " | ".join(problems)
         for needle in ("not in", "duplicate", "empty text", "noted 'cold'"):
             self.assertIn(needle, joined)
+
+    def test_catches_near_duplicates(self):
+        df = self.frame()
+        df.loc[5, "text"] = df.loc[9, "text"].upper() + " edited!"
+        problems, _ = labelling.validate(df, LABELS)
+        self.assertTrue(any("near-duplicate" in p for p in problems))
+
+    def test_near_duplicates_finds_reposts_only(self):
+        texts = ["What's your recent fitness victory? I want to know!",
+                 "What's your recent fitness victory? We want to know!",
+                 "Which lifting belt can you recommend for amateurs in Europe?"]
+        self.assertEqual(labelling.near_duplicates(texts), [(0, 1)])
 
     def test_seventy_percent_cap(self):
         labels = ["a"] * 150 + ["b"] * 25 + ["c"] * 25

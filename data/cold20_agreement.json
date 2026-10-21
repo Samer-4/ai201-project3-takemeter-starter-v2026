@@ -1,0 +1,60 @@
+{
+  "compared": 20,
+  "agreed": 17,
+  "agreement_rate": 0.85,
+  "target": 15,
+  "met": true,
+  "human_counts": {
+    "question": 14,
+    "shared_info": 3,
+    "personal_update": 3
+  },
+  "ai_counts": {
+    "question": 15,
+    "shared_info": 4,
+    "personal_update": 1
+  },
+  "matrix_human_rows_ai_columns": {
+    "question": {
+      "question": 13,
+      "personal_update": 0,
+      "shared_info": 1
+    },
+    "personal_update": {
+      "question": 2,
+      "personal_update": 1,
+      "shared_info": 0
+    },
+    "shared_info": {
+      "question": 0,
+      "personal_update": 0,
+      "shared_info": 3
+    }
+  },
+  "disagreements": [
+    {
+      "id": "lemmy.world:33704050",
+      "url": "https://lemmy.world/post/33704050",
+      "human": "question",
+      "ai": "shared_info",
+      "ai_reason": "headline of a linked video",
+      "text": "What Dr Mike Gets WRONG About Kettlebell Swings… AGAIN!"
+    },
+    {
+      "id": "lemmy.world:27935404",
+      "url": "https://lemmy.world/post/27935404",
+      "human": "personal_update",
+      "ai": "question",
+      "ai_reason": "numbers are context for 'what am I doing wrong?' (rule 1)",
+      "text": "I like going to gym but I feel like I am making ko progress\n\nHey...\nI weight 76 kg, started at 83,8 kg in december 2024.\nAm 175 cm tall and eat about 2500 kcal and 1,6 gramms and more per kg bodyweight since december. Haven three days with less than 120g protein.\n\nBut my weight training sucks. I stsrted with 7,5 kg dumbbell presses and now I am at 12,5 kg.\nMy barbell incline press was 2,5 kg each side now 7,5 kg so in total with barbell 35 kg.\n\nDunno what I am doing wrong? Doing Push Pull Leg 6 days a week, once I did PPL UL cause of time.\n\nI feel so bad. Im doing everything I can"
+    },
+    {
+      "id": "lemmy.world:20538850",
+      "url": "https://sopuli.xyz/post/17740204",
+      "human": "personal_update",
+      "ai": "question",
+      "ai_reason": "reflection is context; the post asks for mobility superset ideas (rule 1)",
+      "text": "Supersetting with mobility\n\nHi y'all. So I'm closing in on a full year at the gym. For the second time in my life I'm doing it, last time was 15-20 years ago. I'm down, I'm up and I've got the best/most fun body I've had in at least 15 years.\n\nSo naturally with a bit of retro- and instrospection I think of what is working for me. I go on loooots of classes, having someone tell me what to do and get energy from others around me is super-duper awesome. From spinning to strength-cardio and dance (I did not see my fondness for that a year ago). Working classes into my schedule often takes me to the gym 30-35 minutes early and I've been using that time doing \"random\" strength stuff.\n\nBut perhaps time for me to get some organization going for my self-guided pre- and/or post class workouts. And since I like moving my \"new\" body around I think of supersetting big(?) strength exercises with mobility work. For example squats with dead hang (or eccentric pull ups to dead hang).\n\nSo let me have your favorite mobility inserts into super sets!\n\nStrength exercises I especially enjoy\n- Squats (including sumo)\n- Romanian deadlifts (including single leg variant)\n- Overhead press\n- Rows (barbell, alternating gorilla)\n- Kettlebell ABCs (one KB, two KB) (I know not 100% a strength exercise)\n\n*Side note: Reading the list above makes me realize I need to find some arm and chest exercise variants to enjoy*"
+    }
+  ]
+}

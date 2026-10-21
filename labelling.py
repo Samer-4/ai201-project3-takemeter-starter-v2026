@@ -6,7 +6,9 @@ Four steps, in order. Each refuses to run until the one before it is done.
 
     python labelling.py prepare    # reserve the cold 20, write the files to label
     python labelling.py cold       # label the cold 20 by hand, no suggestions shown
+    python labelling.py agree      # cold 20: human vs blind AI labels (criterion 4)
     python labelling.py review     # walk every AI pre-label: accept or correct
+    python labelling.py status     # progress, corrections, projected balance
     python labelling.py build      # merge cold + reviewed into labels.csv
     python labelling.py check      # validate labels.csv against the brief
 
@@ -50,6 +52,8 @@ TO_PRELABEL = Path("data/to_prelabel.csv")
 PRELABELS = Path("data/prelabels.csv")
 LABELS_CSV = Path("labels.csv")
 PROVENANCE = Path("data/labels_with_provenance.csv")
+COLD_AI = Path("data/cold20_ai_labels.csv")
+COLD_AGREEMENT = Path("data/cold20_agreement.json")
 
 # The dataset is the two general fitness communities. running@lemmy.world was
 # collected too, and is kept in data/raw, but left out: it is mostly link
@@ -79,6 +83,28 @@ def load_label_names(path=DEFINITIONS):
 def normalise(text):
     """Match posts on their words, not on stray whitespace."""
     return re.sub(r"\s+", " ", str(text)).strip()
+
+
+def near_duplicates(texts, threshold=0.85, prefix=600):
+    """
+    Pairs (i, j), i < j, whose words are near-identical.
+
+    Exact-match dedup misses an edited repost or a cross-post with a different
+    title, and either would put the same post on both sides of the split.
+    Compares the first `prefix` characters of the lowercased words.
+    """
+    from difflib import SequenceMatcher
+
+    keys = [re.sub(r"[^a-z0-9]+", " ", str(t).lower()).strip()[:prefix] for t in texts]
+    pairs = []
+    for i in range(len(keys)):
+        for j in range(i + 1, len(keys)):
+            a, b = keys[i], keys[j]
+            if not a or not b or abs(len(a) - len(b)) > 0.5 * max(len(a), len(b)):
+                continue
+            if SequenceMatcher(None, a, b).ratio() >= threshold:
+                pairs.append((i, j))
+    return pairs
 
 
 def reserve_cold(ids, n=N_COLD, seed=SEED):
@@ -121,6 +147,10 @@ def validate(df, labels):
     duplicates = int(text.map(normalise).duplicated().sum())
     if duplicates:
         problems.append(f"{duplicates} duplicate posts — they would leak across splits.")
+    near = near_duplicates(text.tolist())
+    if near:
+        problems.append(f"{len(near)} near-duplicate pairs (rows {near[:3]}…) — "
+                        f"reposts would leak across splits.")
 
     total = len(df)
     if total:
@@ -202,6 +232,48 @@ def cmd_cold(args, pd):
     print(f"\nDone for now. {left} cold posts still unlabelled.")
 
 
+def cmd_agree(args, pd):
+    """Criterion 4: the human cold labels against the blind AI labels."""
+    import json
+    for path in (COLD, COLD_AI):
+        if not path.exists():
+            raise SystemExit(f"No {path}.")
+    human = pd.read_csv(COLD, dtype=str).fillna("")
+    ai = pd.read_csv(COLD_AI, dtype=str).fillna("")
+    both = human.merge(ai, on="id", how="inner")
+    if len(both) != len(human) or (both["label"].str.strip() == "").any():
+        raise SystemExit("Every cold post needs a human label and an AI label.")
+    both["label"] = both["label"].str.strip()
+    agreed = int((both["label"] == both["ai_label"]).sum())
+    labels = load_label_names()
+    matrix = {h: {a: int(((both["label"] == h) & (both["ai_label"] == a)).sum())
+                  for a in labels} for h in labels}
+    disagreements = [
+        {"id": r.id, "url": r.url, "human": r.label, "ai": r.ai_label,
+         "ai_reason": r.ai_reason, "text": r.text}
+        for r in both.itertuples() if r.label != r.ai_label
+    ]
+    COLD_AGREEMENT.write_text(json.dumps({
+        "compared": len(both), "agreed": agreed, "agreement_rate": agreed / len(both),
+        "target": 15, "met": agreed >= 15,
+        "human_counts": both["label"].value_counts().to_dict(),
+        "ai_counts": both["ai_label"].value_counts().to_dict(),
+        "matrix_human_rows_ai_columns": matrix,
+        "disagreements": disagreements,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    print(f"Agreed on {agreed} of {len(both)} ({agreed / len(both):.0%}). "
+          f"Criterion 4 target 15/20: {'MET' if agreed >= 15 else 'MISSED'}\n")
+    print("| human \\ AI | " + " | ".join(labels) + " |")
+    print("|---|" + "---|" * len(labels))
+    for h in labels:
+        print(f"| **{h}** | " + " | ".join(str(matrix[h][a]) for a in labels) + " |")
+    for d in disagreements:
+        print(f"\n[{d['id']}] human={d['human']}  ai={d['ai']}  ({d['ai_reason']})")
+        print("  " + normalise(d["text"])[:220])
+    print(f"\nWrote {COLD_AGREEMENT}.")
+
+
 def cmd_review(args, pd):
     if not PRELABELS.exists():
         raise SystemExit(f"No {PRELABELS} yet — the AI pre-labels go there.")
@@ -212,40 +284,57 @@ def cmd_review(args, pd):
             df[column] = ""
 
     pending = [i for i in df.index if not df.at[i, "human_label"]]
-    print(f"{len(df) - len(pending)} of {len(df)} reviewed. {len(pending)} to go.\n")
+    if args.borderline:
+        pending = [i for i in pending if df.at[i, "ai_borderline"] == "True"]
+    print(f"{int((df['human_label'] != '').sum())} of {len(df)} reviewed. "
+          f"{len(pending)} to go{' (borderline only)' if args.borderline else ''}.\n")
     menu = "  ".join(f"[{n}] {name}" for n, name in enumerate(labels, 1))
 
-    for done, i in enumerate(pending, 1):
+    history = []
+    step = 0
+    while step < len(pending):
+        i = pending[step]
         row = df.loc[i]
         print("─" * 72)
-        print(f"{done}/{len(pending)}   {row['id']}   {row.get('url', '')}\n")
+        flag = "   ⚠ BORDERLINE — read it closely" if row.get("ai_borderline") == "True" else ""
+        print(f"{step + 1}/{len(pending)}   {row['id']}   {row.get('url', '')}{flag}\n")
         print(row["text"])
         print(f"\nAI suggests: {row['ai_label']}   ({row.get('ai_reason', '')})")
         print(menu)
-        while True:
-            choice = input("Enter = accept · number = change · s = skip · q = quit > ").strip().lower()
-            if choice == "q":
-                df.to_csv(PRELABELS, index=False)
-                print(f"Saved. Resume with `python labelling.py review`.")
-                return
-            if choice == "s":
-                break
-            if choice == "":
-                picked = row["ai_label"]
-            elif choice.isdigit() and 1 <= int(choice) <= len(labels):
-                picked = labels[int(choice) - 1]
-            else:
-                print("  ?")
-                continue
-            df.at[i, "human_label"] = picked
-            df.at[i, "note"] = ("pre-labelled by AI, human accepted"
-                                if picked == row["ai_label"]
-                                else f"pre-labelled by AI as {row['ai_label']}, human corrected")
-            df.to_csv(PRELABELS, index=False)
+        choice = input("Enter = accept · number = change · u = undo · s = skip · q = quit > ").strip().lower()
+        if choice == "q":
             break
+        if choice == "u":
+            if history:
+                step = history.pop()
+                df.at[pending[step], "human_label"] = ""
+                df.at[pending[step], "note"] = ""
+                df.to_csv(PRELABELS, index=False)
+            else:
+                print("  nothing to undo")
+            continue
+        if choice == "s":
+            step += 1
+            continue
+        if choice == "":
+            picked = row["ai_label"]
+        elif choice.isdigit() and 1 <= int(choice) <= len(labels):
+            picked = labels[int(choice) - 1]
+        else:
+            print("  ?")
+            continue
+        df.at[i, "human_label"] = picked
+        df.at[i, "note"] = ("pre-labelled by AI, human accepted"
+                            if picked == row["ai_label"]
+                            else f"pre-labelled by AI as {row['ai_label']}, human corrected")
+        df.to_csv(PRELABELS, index=False)
+        history.append(step)
+        step += 1
 
-    left = int((df["human_label"] == "").sum())
-    print(f"\nDone for now. {left} still unreviewed.")
+    df.to_csv(PRELABELS, index=False)
+    reviewed = df[df["human_label"] != ""]
+    changed = int((reviewed["human_label"] != reviewed["ai_label"]).sum())
+    print(f"\nSaved. {len(reviewed)} reviewed, {changed} corrected so far.")
 
 
 def cmd_build(args, pd):
@@ -286,6 +375,27 @@ def cmd_build(args, pd):
     print(merged["label"].value_counts().to_string())
 
 
+def cmd_status(args, pd):
+    """Where the review stands, and what the label balance would be if built now."""
+    pre = pd.read_csv(PRELABELS, dtype=str).fillna("")
+    cold = pd.read_csv(COLD, dtype=str).fillna("")
+    reviewed = pre[pre["human_label"] != ""]
+    left = pre[pre["human_label"] == ""]
+    print(f"cold labelled     {int((cold['label'].str.strip() != '').sum())} / {len(cold)}")
+    print(f"pre-labels        {len(reviewed)} reviewed, {len(left)} to go "
+          f"({int((left['ai_borderline'] == 'True').sum())} of those borderline)")
+    if len(reviewed):
+        changed = int((reviewed["human_label"] != reviewed["ai_label"]).sum())
+        print(f"                  {changed} corrected ({changed / len(reviewed):.0%} of reviewed)")
+    # Projected balance: human label where there is one, AI suggestion otherwise.
+    projected = pd.concat([cold["label"].str.strip(),
+                           pre["human_label"].where(pre["human_label"] != "", pre["ai_label"])])
+    counts = projected.value_counts()
+    print("\nprojected balance (criterion 3: largest <= 65%, smallest >= 15%)")
+    for name, count in counts.items():
+        print(f"  {name:<16} {count:>4}  {count / len(projected):.1%}")
+
+
 def cmd_check(args, pd):
     labels = load_label_names()
     df = pd.read_csv(LABELS_CSV)
@@ -307,16 +417,20 @@ def main():
     p = sub.add_parser("prepare")
     p.add_argument("--force", action="store_true")
     sub.add_parser("cold")
-    sub.add_parser("review")
+    sub.add_parser("agree")
+    r = sub.add_parser("review")
+    r.add_argument("--borderline", action="store_true",
+                   help="only the posts the AI flagged as close calls")
     b = sub.add_parser("build")
     b.add_argument("--allow-unreviewed", action="store_true",
                    help="drop unreviewed pre-labels instead of refusing")
     sub.add_parser("check")
+    sub.add_parser("status")
     args = parser.parse_args()
 
     import pandas as pd
-    handler = {"prepare": cmd_prepare, "cold": cmd_cold, "review": cmd_review,
-               "build": cmd_build, "check": cmd_check}[args.command]
+    handler = {"prepare": cmd_prepare, "cold": cmd_cold, "agree": cmd_agree, "review": cmd_review,
+               "build": cmd_build, "check": cmd_check, "status": cmd_status}[args.command]
     return handler(args, pd) or 0
 
 
