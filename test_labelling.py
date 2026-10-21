@@ -186,6 +186,29 @@ class RealArtifacts(unittest.TestCase):
         self.assertEqual(problems, [])
         self.assertEqual(list(df.columns), ["text", "label", "note"])
 
+    @unittest.skipUnless((ROOT / "data/labels_with_provenance.csv").exists(),
+                         "labels not built yet")
+    def test_provenance_is_honest(self):
+        """Cold labels survive unchanged; no AI label is passed off as reviewed."""
+        prov = pd.read_csv(ROOT / "data/labels_with_provenance.csv", dtype=str).fillna("")
+        labels = pd.read_csv(ROOT / "labels.csv", dtype=str).fillna("")
+        cold = pd.read_csv(ROOT / "data/cold20_to_label.csv", dtype=str).fillna("")
+        self.assertEqual(list(prov["text"]), list(labels["text"]))
+        self.assertEqual(list(prov["label"]), list(labels["label"]))
+
+        human = prov[prov["label_source"] == "human_cold"].set_index("id")
+        self.assertEqual(len(human), 20)
+        for row in cold.itertuples():
+            self.assertEqual(human.at[row.id, "label"], row.label.strip())
+            self.assertEqual(human.at[row.id, "note"], "cold")
+
+        ai = prov[prov["label_source"] == "ai_unreviewed"]
+        self.assertTrue((ai["human_label"] == "").all())
+        self.assertTrue((ai["note"] == labelling.UNREVIEWED_NOTE).all())
+        self.assertTrue((ai["label"] == ai["ai_label"]).all())
+        self.assertLessEqual(set(prov["label_source"]),
+                             {"human_cold", "ai_unreviewed", "ai_human_reviewed"})
+
     @unittest.skipUnless((ROOT / "test_split.csv").exists() and (ROOT / "labels.csv").exists(),
                          "no test split yet")
     def test_test_split_is_the_seed_42_split_of_labels_csv(self):

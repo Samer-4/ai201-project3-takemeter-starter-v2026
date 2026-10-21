@@ -61,6 +61,7 @@ COLD_AGREEMENT = Path("data/cold20_agreement.json")
 INCLUDED_SOURCES = ("fitness@lemmy.world", "fitness@lemmy.ml")
 
 COLD_NOTE = "cold"
+UNREVIEWED_NOTE = "AI-labelled, NOT reviewed by a human"
 MAX_SHARE = 0.70
 MIN_ROWS = 150
 TARGET_ROWS = 200
@@ -349,16 +350,29 @@ def cmd_build(args, pd):
         raise SystemExit(f"{n} of the cold posts in {COLD} still have no label.")
     cold = cold.assign(label=cold["label"].str.strip(), note=COLD_NOTE)
 
+    cold = cold.assign(label_source="human_cold", ai_label="", human_label=cold["label"])
+
     pre = pd.read_csv(PRELABELS, dtype=str).fillna("")
-    unreviewed = int((pre["human_label"].str.strip() == "").sum())
-    if unreviewed and not args.allow_unreviewed:
+    is_unreviewed = pre["human_label"].str.strip() == ""
+    unreviewed = int(is_unreviewed.sum())
+    if unreviewed and not (args.allow_unreviewed or args.include_unreviewed):
         raise SystemExit(f"{unreviewed} pre-labels have no human_label. Every AI label "
                          f"is read by a person before it trains anything — finish "
-                         f"`python labelling.py review` first.")
-    pre = pre[pre["human_label"].str.strip() != ""]
-    pre = pre.assign(label=pre["human_label"].str.strip())
+                         f"`python labelling.py review` first, or pass "
+                         f"--include-unreviewed to train on them as AI labels, disclosed.")
+    if args.include_unreviewed:
+        # The AI's label is used as-is, and the row says so. human_label stays
+        # empty: nothing here records a review that didn't happen.
+        pre = pre.assign(
+            label=pre["human_label"].where(~is_unreviewed, pre["ai_label"]).str.strip(),
+            note=pre["note"].where(~is_unreviewed, UNREVIEWED_NOTE),
+            label_source=is_unreviewed.map({True: "ai_unreviewed", False: "ai_human_reviewed"}),
+        )
+    else:
+        pre = pre[~is_unreviewed]
+        pre = pre.assign(label=pre["human_label"].str.strip(), label_source="ai_human_reviewed")
 
-    columns = ["id", "url", "text", "label", "note"]
+    columns = ["id", "url", "text", "label", "note", "label_source", "ai_label", "human_label"]
     merged = pd.concat([cold[columns], pre[columns]], ignore_index=True)
 
     problems, warnings = validate(merged, labels)
@@ -373,6 +387,8 @@ def cmd_build(args, pd):
     merged[["text", "label", "note"]].to_csv(LABELS_CSV, index=False)
     print(f"\nWrote {LABELS_CSV} ({len(merged)} rows) and {PROVENANCE}.")
     print(merged["label"].value_counts().to_string())
+    print()
+    print(merged["label_source"].value_counts().to_string())
 
 
 def cmd_status(args, pd):
@@ -424,6 +440,8 @@ def main():
     b = sub.add_parser("build")
     b.add_argument("--allow-unreviewed", action="store_true",
                    help="drop unreviewed pre-labels instead of refusing")
+    b.add_argument("--include-unreviewed", action="store_true",
+                   help="train on unreviewed AI labels, each noted as unreviewed")
     sub.add_parser("check")
     sub.add_parser("status")
     args = parser.parse_args()
