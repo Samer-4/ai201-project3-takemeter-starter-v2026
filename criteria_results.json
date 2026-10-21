@@ -1,0 +1,41 @@
+{
+  "seed": 42,
+  "n_test": 56,
+  "criteria": [
+    {
+      "number": 1,
+      "criterion": "Test accuracy",
+      "target": ">= 0.75",
+      "actual": "0.679",
+      "met": false
+    },
+    {
+      "number": 2,
+      "criterion": "Per-label F1",
+      "target": "question >= 0.80, shared_info >= 0.60, personal_update >= 0.50",
+      "actual": "question 0.780, shared_info 0.522, personal_update 0.000",
+      "met": false
+    },
+    {
+      "number": 3,
+      "criterion": "Balance in labels.csv",
+      "target": "largest <= 65%, smallest >= 15%",
+      "actual": "largest 58.2%, smallest 11.9%",
+      "met": false
+    },
+    {
+      "number": 4,
+      "criterion": "Cold-20 agreement (human vs blind AI)",
+      "target": ">= 15/20",
+      "actual": "17/20",
+      "met": true
+    },
+    {
+      "number": 5,
+      "criterion": "Confidence gap (most- minus least-confident third)",
+      "target": ">= 0.15",
+      "actual": "0.944 - 0.444 = +0.500 (n=18 per third)",
+      "met": true
+    }
+  ]
+}

@@ -9,7 +9,8 @@ this folder — so `results.json` and `test_split.csv` land here. Execution stop
 at the "Unit 6 starts here" marker; nothing below it runs. Outputs are written
 back into the notebook so the committed file shows what the run printed.
 
-Needs `nbclient` and `ipykernel` (`pip install nbclient ipykernel`); they are
+Needs `nbclient` and `ipykernel` (`pip install nbclient ipykernel`), and the
+kernelspec named in KERNEL below. They are
 tooling for running the notebook, not dependencies of it, so requirements.txt
 doesn't pin them.
 """
@@ -27,6 +28,10 @@ for _stream in (sys.stdout, sys.stderr):
 NOTEBOOK = Path("takemeter.ipynb")
 STOP_MARKER = "Unit 6 starts here"
 
+# A kernelspec pointing at this project's .venv. Create it once with:
+#   .venv/bin/python -m ipykernel install --user --name takemeter-venv
+KERNEL = "takemeter-venv"
+
 
 def main():
     try:
@@ -42,15 +47,10 @@ def main():
 
     print(f"Running cells 0–{stop - 1} of {NOTEBOOK} (sections 1–5)…", flush=True)
     started = time.time()
-    client = NotebookClient(unit5, timeout=3600, kernel_name="python3",
+    client = NotebookClient(unit5, timeout=3600, kernel_name=KERNEL,
                             resources={"metadata": {"path": str(Path.cwd())}})
-    # Use this interpreter — the .venv — rather than whatever "python3" resolves to.
-    client.kernel_manager_class = "jupyter_client.manager.KernelManager"
-    client.extra_arguments = []
-    km = client.create_kernel_manager()
-    km.kernel_cmd = [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"]
     try:
-        client.execute(km=km)
+        client.execute()
     finally:
         # Keep whatever ran, even on failure, so the error is visible in the file.
         nb.cells[:stop] = unit5.cells

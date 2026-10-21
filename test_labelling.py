@@ -175,6 +175,31 @@ class NotebookSplit(unittest.TestCase):
         self.assertLessEqual(counts.max() - counts.min(), 1)
 
 
+class CriteriaCheck(unittest.TestCase):
+    def fixture(self, acc, f1s, most, least):
+        return {"accuracy": acc,
+                "per_label": {l: {"f1": f} for l, f in zip(
+                    ["question", "shared_info", "personal_update"], f1s)},
+                "confidence": {"accuracy_most_confident_third": most,
+                               "accuracy_least_confident_third": least, "n_per_third": 18}}
+
+    def test_boundaries_count_as_met(self):
+        import criteria_check
+        rows = criteria_check.evaluate(
+            self.fixture(0.75, [0.80, 0.60, 0.50], 0.90, 0.75),
+            {"question": 65, "shared_info": 20, "personal_update": 15},
+            {"agreed": 15, "compared": 20})
+        self.assertEqual([r[4] for r in rows], [True] * 5)
+
+    def test_each_miss_is_reported(self):
+        import criteria_check
+        rows = criteria_check.evaluate(
+            self.fixture(0.74, [0.90, 0.90, 0.49], 0.80, 0.70),
+            {"question": 66, "shared_info": 20, "personal_update": 14},
+            {"agreed": 14, "compared": 20})
+        self.assertEqual([r[4] for r in rows], [False] * 5)
+
+
 class RealArtifacts(unittest.TestCase):
     """Checks on the committed files themselves, once they exist."""
 
