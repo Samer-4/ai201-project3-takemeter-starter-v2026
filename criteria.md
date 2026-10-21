@@ -51,63 +51,69 @@ whether you hit them:
 
 ---
 
-## 1.
+## 1. Overall accuracy of at least 0.75 on the held-out test split
 
-<!-- Your criterion. It must name a number. -->
+Measured from `accuracy` in `results.json`.
 
-
-
-**Why this target:**
-
-
-
----
-
-## 2.
-
-<!-- Your criterion. -->
-
-
-
-**Why this target:**
-
-
+**Why this target:** `question` is close to 60% of my posts, so a model that
+always says `question` scores about 0.58 without learning anything. 0.75 asks
+for a clear margin over that majority guess, and that margin is what makes a
+sorter of fitness posts worth using. It doesn't ask for perfection on 374 posts
+where the question/personal_update boundary is a judgement call.
 
 ---
 
-## 3.
+## 2. Per-label F1 on the held-out test split: `question` at least 0.80, `shared_info` at least 0.60, `personal_update` at least 0.50
 
-<!-- Your criterion. -->
+Measured from `per_label.<label>.f1` in `results.json`. All three must hold.
 
-
-
-**Why this target:**
-
-
-
----
-
-## 4.
-
-<!-- Your criterion. -->
-
-
-
-**Why this target:**
-
-
+**Why this target:** each target is set by the size of its label. `question`
+has around 210 examples and about 33 in test, so it should be learned well.
+`shared_info` posts mostly look different on the surface (headline titles,
+quoted article text), so 0.60 is reasonable at roughly 85 examples.
+`personal_update` is my smallest label, at about 65 examples and around 10 in
+test. It also sits on my hardest boundary, with `question`, so it gets the
+loosest target. Macro F1 alone could hide one label collapsing to zero, which
+is why this criterion is per label.
 
 ---
 
-## 5.
+## 3. Balance: in `labels.csv`, the largest label is at most 65% of rows and the smallest is at least 15%
 
-<!-- Your criterion. -->
+Measured from the label counts in `labels.csv` (`python labelling.py check`).
 
+**Why this target:** the brief caps a label at 70%, but my taxonomy sample
+already had `question` near 58%. Holding it at 65% gives a little headroom, and
+a 15% floor keeps the smallest label above roughly 55 examples. Below that its
+test F1 would rest on a handful of posts.
 
+---
 
-**Why this target:**
+## 4. Consistency: on the cold 20, an independent second labeller (the AI, labelling blind after I finished) agrees with my labels on at least 15 of 20 (75%)
 
+Measured in `data/cold20_agreement.json`. The second labels are written before
+the comparison is run, and my labels are committed before the second labeller
+sees the posts.
 
+**Why this target:** my three decision rules are only useful if someone who
+didn't write them can apply them and reach the same answers. This is also the
+only check on the pre-labelling workflow: if the AI disagrees with me on more
+than a quarter of the cold posts, its 354 pre-labels need much heavier
+correction than "review and accept". 75% allows for the question/personal_update
+boundary being genuinely hard on a few posts.
+
+---
+
+## 5. Confidence: accuracy on the model's most-confident third of the test split is at least 0.10 higher than on its least-confident third
+
+Measured as `confidence.accuracy_most_confident_third` minus
+`confidence.accuracy_least_confident_third` in `results.json`.
+
+**Why this target:** the realistic use here is routing. Confident predictions
+get sorted automatically, and unsure ones go to a person. That only works if
+confidence separates right from wrong. With about 57 test posts, each third is
+about 19 posts, so one post is worth about 0.05. A gap of 0.10 is two posts'
+worth, the smallest difference I'd treat as real rather than noise.
 
 ---
 
