@@ -104,16 +104,22 @@ boundary being genuinely hard on a few posts.
 
 ---
 
-## 5. Confidence: accuracy on the model's most-confident third of the test split is at least 0.10 higher than on its least-confident third
+## 5. Confidence: accuracy on the model's most-confident third of the test split is at least 0.15 higher than on its least-confident third
 
 Measured as `confidence.accuracy_most_confident_third` minus
 `confidence.accuracy_least_confident_third` in `results.json`.
 
 **Why this target:** the realistic use here is routing. Confident predictions
 get sorted automatically, and unsure ones go to a person. That only works if
-confidence separates right from wrong. With about 57 test posts, each third is
-about 19 posts, so one post is worth about 0.05. A gap of 0.10 is two posts'
-worth, the smallest difference I'd treat as real rather than noise.
+confidence separates right from wrong. With about 55 test posts, each third is
+about 18 posts, so one post is worth about 0.055. A gap of 0.15 is about three
+posts' worth. A one- or two-post gap could be noise on a test set this small,
+so three is the smallest gap I'd act on.
+
+> **Changed before training:** this was filed at 0.10 in an earlier commit and
+> set back to my originally proposed 0.15 before any model was trained, at my
+> own decision. No results existed when either number was written. The git
+> history shows both.
 
 ---
 
