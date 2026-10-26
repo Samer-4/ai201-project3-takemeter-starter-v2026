@@ -748,9 +748,35 @@ be measured reliably on 56 posts.
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** one thing, the training loss. Cross-entropy is now
+weighted by inverse label frequency in each seed's **training split**, using
+`n / (k × count)`. That gives `question` ≈ 0.57, `shared_info` ≈ 1.12 and
+`personal_update` ≈ 2.79, so a missed `personal_update` costs about five
+times as much as a missed `question`.
 
-**Which diagnosis pointed at it:**
+- It's done in a new notebook cell, *6a. The improvement*, as a `Trainer`
+  subclass (`WeightedLossTrainer`). The Unit 5 cells are unchanged, and
+  setting `CLASS_WEIGHTED = False` reproduces the before-run.
+- Everything else is the same: data, labels, splits, seeds, model, epochs,
+  learning rate, batch size and max length.
+- The weights come from training counts only. The test split was not used to
+  choose or tune anything.
+
+**Which diagnosis pointed at it:** criterion 2's `personal_update` failure. The
+model never predicted the label on any seed, and on seed 7 it predicted only
+`question` for two epochs. That pattern points to the minority label being
+drowned out by an unweighted loss. BART finding 6 of 7 of those test posts
+shows the label is learnable from the text. Relabelling was the other
+candidate, but the evidence for a labelling problem is 2 posts on the cold 20,
+and the staff agreement result isn't available. So I chose the change the
+evidence supports best.
+
+**What I expect (written before the after-run):** `personal_update` recall
+should rise above zero on at least some seeds. Some `question` posts will
+probably start being called `personal_update`, so `question` F1 may drop a
+little. I don't expect overall accuracy to change much. Criterion 3 (balance)
+and criterion 4 (agreement) can't move, because training doesn't touch the
+dataset.
 
 ### Run Log — After
 

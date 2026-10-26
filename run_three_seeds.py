@@ -12,8 +12,9 @@ written. Nothing is reimplemented here: train_model, split_dataset, evaluate
 and the section 7 helpers are the notebook's.
 
 Section 6 writes results_three_seeds_<RUN_LABEL>.json. The script refuses to
-run if that file already exists, and checks results.json and test_split.csv
-are byte-identical afterwards.
+run if that file already exists, and checks results.json, test_split.csv and
+(on the "after" run) results_three_seeds_before.json are byte-identical
+afterwards.
 """
 
 import ast
@@ -31,7 +32,7 @@ for _stream in (sys.stdout, sys.stderr):
 
 NOTEBOOK = Path("takemeter.ipynb")
 STOP_MARKER = "Unit 6 starts here"
-PROTECTED = [Path("results.json"), Path("test_split.csv")]
+PROTECTED = [Path("results.json"), Path("test_split.csv"), Path("results_three_seeds_before.json")]
 
 
 def definitions_only(source):
@@ -57,7 +58,8 @@ def main():
         print(f"{out} already exists. Move it aside first; not overwriting.", file=sys.stderr)
         return 1
 
-    before = {p: digest(p) for p in PROTECTED}
+    protected = [p for p in PROTECTED if p.exists() and p != out]
+    before = {p: digest(p) for p in protected}
     namespace = {"__name__": "__main__"}
 
     for i, source in code:
@@ -70,11 +72,11 @@ def main():
             print(f"\n── cell {i} ──", flush=True)
         exec(compile(source, f"<takemeter.ipynb cell {i}>", "exec"), namespace)
 
-    changed = [str(p) for p in PROTECTED if digest(p) != before[p]]
+    changed = [str(p) for p in protected if digest(p) != before[p]]
     if changed:
         print(f"\n[ERROR] changed during the run: {', '.join(changed)}", file=sys.stderr)
         return 1
-    print(f"\n{', '.join(map(str, PROTECTED))} unchanged.")
+    print(f"\n{', '.join(map(str, protected))} unchanged.")
     return 0
 
 
