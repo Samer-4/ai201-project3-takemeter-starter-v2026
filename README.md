@@ -418,6 +418,35 @@ and ran the notebook.
 - **Agreement check:** on the cold 20, the AI's blind labels matched mine on
   17 of 20.
 
+**Unit 6 additions**
+
+In Unit 6, Claude (Claude Code) again did the engineering, analysis and
+drafting:
+
+- It ran `baseline.py`'s results check and the three-seed runs.
+- It wrote `run_three_seeds.py`, which runs the notebook's own sections 6–7
+  headless.
+- It implemented the class-weighted loss cell.
+- It drafted the Unit 6 README sections from the result files: the
+  verdicts, diagnoses, before/after analysis and what's still broken.
+
+What I did, and what I didn't:
+
+- **Prediction:** the Milestone 1 prediction is mine, written before the
+  baseline numbers were compared.
+- **Staff-set labels:** these were **AI-suggested and reviewed by me**, not
+  labelled unaided. See the Agreement Report.
+- **Adjudications:** none have been written, by me or by the AI, because
+  the staff answers haven't arrived.
+- **Choice of improvement:** I asked for an intervention targeting the
+  `personal_update` failure and suggested class weighting. Claude checked
+  how the notebook trains and confirmed that a weighted loss could be added
+  as a single change.
+- **Diagnoses:** Claude drafted them. They rest on the result files and the
+  cold-20 comparison, not on any new human review.
+- **Training labels:** the 351 AI training labels from Unit 5 are still
+  unreviewed. Nothing in Unit 6 changed or relabelled them.
+
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
      Don't fill these in during unit 5.
@@ -700,7 +729,22 @@ be measured reliably on 56 posts.
      data/staff_taxonomy.md, not your own — so every argument below is made
      from those definitions and those decision rules. -->
 
-**Agreement rate:** ___ / 30 = ___%
+> ⚠️ **PENDING. Not measured yet.** My labels for the 30 staff posts are
+> committed in `my_staff_labels.csv` (commit `28b5aaa`). They were made
+> before any staff answer was requested or seen. The staff answers
+> (`data/staff_labels.csv`, sent by the TF) have not arrived, so
+> `agreement.py` has not been run and `agreement_results.json` does not
+> exist. Nothing below is filled in, and no rate or adjudication has been
+> guessed.
+>
+> **How my staff-set labels were made:** they were **AI-suggested and
+> reviewed by me**. An AI proposed a label for each post and I checked each
+> one before accepting it. They are not unaided independent labels. When
+> the rate comes in, it will measure labels I approved, not labels I made
+> from scratch. It should be read as weaker evidence about my own
+> consistency than an unaided rate would be.
+
+**Agreement rate:** pending (staff labels not yet received)
 
 <!-- Nobody grades this number. A 60% who argues every disagreement from the
      stated rules beats a 95% who wrote "staff was right" nine times. Several
@@ -862,12 +906,47 @@ unweighted and can be compared directly.
 
 <!-- For each criterion still missed: what you'd do, and why you stopped. -->
 
+After the improvement, two criteria are still missed. The agreement evidence
+is still incomplete.
 
+- **Criterion 2: `personal_update` F1 is 0.600 / 0.000 / 0.000.**
+  - *Next step:* have a person review the AI labels on the
+    `question`/`personal_update` boundary. That means the 202 AI-labelled
+    `question` posts and the 41 AI-labelled `personal_update` posts, using
+    the "delete the questions" rule. Then re-run the three seeds with the
+    class weighting kept.
+  - *Why that one:* the cold-20 comparison shows the AI moving 2 of my 3
+    `personal_update` posts to `question`. If that holds across the dataset,
+    there are more real `personal_update` posts hidden under `question`. That
+    would fix the example count and the labelling at the same time.
+    Training longer is the other candidate (validation loss was still
+    falling at epoch 3), but it would be a second change on top of this one.
+  - *Why I stopped:* reviewing about 240 posts by hand didn't fit in the
+    Unit 6 deadline, and Milestone 5 allows one change.
+- **Criterion 3: balance is 11.9% against a 15% floor.**
+  - *Next step:* collect more `personal_update` posts, for example from
+    other Lemmy fitness or running communities, labelled by a person. The
+    review above might also move some posts from `question` into
+    `personal_update`.
+  - *Why I stopped:* it needs new data. No training change can affect it.
+- **Staff agreement: pending.** The rate and adjudications can't be written
+  until the TF's `data/staff_labels.csv` arrives. Until then, Milestone 4's
+  label-vs-model diagnosis rests only on the 20-post cold comparison.
+- **Measurement limits that remain:** 7 `personal_update` posts per test
+  split, so one post moves that label's recall by 0.14. Most test gold labels
+  are unreviewed AI labels, so the scores measure agreement with the AI's
+  reading of my taxonomy, not with mine.
 
 **The gap between what I meant my labels to capture and what the model
 learned:**
 <!-- Two sentences. Your confusion matrix is the evidence. -->
 
+I meant `personal_update` to be a distinct kind of post: a writer reporting
+their own fitness journey, even when a question is tacked on. The model
+learned it as a kind of `question`: even with the weighted loss, 4 of 7 real
+`personal_update` posts on seed 42 and all 7 on seeds 7 and 2024 were called
+`question`, so from 31 training examples it has not separated my
+`question`/`personal_update` boundary at all on two of the three splits.
 
 
 <!-- ═════════════════════════════════════════════════════════════════════
