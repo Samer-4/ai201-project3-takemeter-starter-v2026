@@ -586,11 +586,14 @@ towards `question`, the majority label (58% of the data).
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Test accuracy | ≥ 0.75 | **MISSED** | Seed-dependent: 0.679 / 0.750 / 0.786. Seed 42 is below target. |
+| 2 | Per-label F1 | `question` ≥ 0.80, `shared_info` ≥ 0.60, `personal_update` ≥ 0.50 | **MISSED** | Seed-dependent: `personal_update` is 0.000 on all three seeds. `question` (0.780) and `shared_info` (0.522) also miss on seed 42. |
+| 3 | Balance in `labels.csv` | largest ≤ 65%, smallest ≥ 15% | **MISSED** | Fixed property of the dataset, the same for every seed: `personal_update` is 11.9%. |
+| 4 | Cold-20 agreement | ≥ 15/20 | **MET** | Fixed property of the dataset: 17/20 (`data/cold20_agreement.json`). |
+| 5 | Confidence gap | ≥ 0.15 | **MISSED** | Seed-dependent: 0.500 / 0.222 / 0.111. Seed 2024 is below target. |
+
+All targets are the original ones in `criteria.md`, unchanged. Seed-dependent
+numbers come from `results_three_seeds_before.json`.
 
 **Diagnoses**
 
@@ -603,6 +606,88 @@ towards `question`, the majority label (58% of the data).
      have that can tell a LABELLING problem from a MODEL problem, and this
      section is graded on whether you used it that way. -->
 
+> ⚠️ **The staff agreement check is pending, not measured.** My labels for
+> the 30 staff posts are committed (`my_staff_labels.csv`), but the staff
+> answers (`data/staff_labels.csv`) have not arrived. The only consistency
+> evidence below is the cold-20 comparison (my hand labels vs the AI's blind
+> labels). It covers 20 posts, and only 3 of them are `personal_update`.
+
+**Evidence about the labels, as far as it goes.** Each seed's test split has
+56 posts, and only 2 to 5 of them were labelled by hand. The rest are
+unreviewed AI labels. So every score here measures the model against the
+AI's reading of my taxonomy. The cold 20 are the only place where that reading
+was checked against mine. They agree on 17 of 20. The three disagreements run
+in one direction:
+
+- On 2 of the 3 posts I called `personal_update`, the AI said `question`.
+- On 1 post I called `question`, the AI said `shared_info`.
+- The AI never moved a post into `personal_update`.
+
+That is the same direction as the model's main error. It suggests the AI
+labels may undercount `personal_update` on the `question` boundary, which
+would leave the model even fewer and blurrier examples. But it rests on 2
+posts, so it is a lead, not a finding. The staff agreement result is what
+would show whether I apply a written rule consistently. It isn't available
+yet.
+
+**Criterion 2, `personal_update` F1 0.000 on every seed: mainly too few
+examples and a majority-class collapse. A labelling contribution is possible
+but not shown.**
+
+- The model never predicts `personal_update` on any seed. All 21 test posts
+  across the three seeds went to `question`. A model that never outputs a
+  label hasn't learned that label from 31 training examples (12% of
+  training) with an unweighted loss, where calling everything `question`
+  costs little.
+- The task itself is reachable. On the seed-42 test split, zero-shot BART
+  got 6 of the same 7 `personal_update` posts right from the definitions
+  alone (F1 0.857, Milestone 1). Those 7 gold labels are AI labels. A
+  different model reading my definitions picks the same posts out, so the
+  boundary is learnable from the text.
+- The training is too short to escape the majority label. On seed 7,
+  validation accuracy stayed at 0.589 for epochs 1 and 2, which is exactly
+  the share of `question` in that validation split (33/56). So the model was
+  predicting `question` for every post. Validation loss was still falling at
+  epoch 3 on every seed.
+- **Why I don't call this mainly a labelling problem:** if the
+  `personal_update` labels were simply inconsistent, I'd expect a weak,
+  noisy F1, not exactly zero on every seed with not a single prediction.
+  Zero predictions is what imbalance plus short training looks like.
+
+**Criteria 1 and 2 on seed 42 (`question` 0.780, `shared_info` 0.522): a
+leaning towards `question` that depends on the split.** Always guessing
+`question` scores 32/56 = 0.571 on every split. The model beats that only as
+far as it learns `shared_info`, and that varies by seed:
+
+| Seed | `shared_info` posts called `question` | `shared_info` F1 |
+|---|---|---|
+| 42 | 11 of 17 | 0.522 |
+| 7 | 7 of 17 | 0.741 |
+| 2024 | 3 of 17 | 0.848 |
+
+Accuracy moves 10.7 points across seeds, with the same settings and the same
+test-set size and label mix. So seed 42's misses are partly a hard split and
+partly an under-trained model. Neither number is stable enough to call the
+model either good or bad at this boundary. Because `question` is always
+over-predicted, its precision suffers (0.64 on seed 42), and that is why its
+F1 misses on seed 42 despite perfect recall.
+
+**Criterion 3, balance 11.9% against a 15% floor: too few examples
+collected.** This is a dataset fact and training can't change it. The
+target assumed about 65 `personal_update` posts, based on the 40-post sample;
+the communities produced 44. The unreviewed AI labels could also be
+undercounting the label (see above). This criterion can only be fixed by
+collecting more data or by a human review of the 351 AI labels.
+
+**Criterion 5, confidence gap 0.111 on seed 2024: small-sample noise, plus
+a model that is confidently wrong on one label.** With 18 posts per third,
+each post is worth 0.056, so 0.111 is 2 posts. The gap shrinks as accuracy
+rises (0.500, 0.222, 0.111): the least-confident third is right 0.722 of
+the time on both seeds 7 and 2024, so there are few errors left to separate.
+The results files don't record per-post confidence, so I can't tell which
+third the `personal_update` errors fall in. I don't read this as evidence
+that confidence is meaningless. I read it as evidence that a 0.15 gap can't
+be measured reliably on 56 posts.
 
 
 ---
