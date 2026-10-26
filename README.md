@@ -489,27 +489,91 @@ and one test split, where a single post is worth about 1.8 accuracy points.
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Test accuracy | ≥ 0.75 | 0.679 | 0.750 | 0.786 | **MISSED** |
+| 2. Per-label F1 (`question` / `shared_info` / `personal_update`) | ≥ 0.80 / ≥ 0.60 / ≥ 0.50 | 0.780 / 0.522 / 0.000 | 0.821 / 0.741 / 0.000 | 0.833 / 0.848 / 0.000 | **MISSED** |
+| 3. Balance in `labels.csv` (largest / smallest) | ≤ 65% / ≥ 15% | 58.2% / 11.9% | 58.2% / 11.9% | 58.2% / 11.9% | **MISSED** |
+| 4. Cold-20 agreement, human vs blind AI | ≥ 15/20 | 17/20 | 17/20 | 17/20 | **MET** |
+| 5. Confidence gap (most- minus least-confident third) | ≥ 0.15 | 0.944 − 0.444 = 0.500 | 0.944 − 0.722 = 0.222 | 0.833 − 0.722 = 0.111 | **MISSED** |
+
+From `results_three_seeds_before.json`, written by notebook section 6
+(`SEEDS = [42, 7, 2024]`, `RUN_LABEL = "before"`). Each seed gets its own
+stratified 70/15/15 split and a fresh `distilbert-base-uncased`, with the
+Unit 5 settings unchanged (3 epochs, lr 2e-5, batch 16, max length 128) on
+Apple Silicon (MPS). Every test split has 56 posts: 32 `question`, 17
+`shared_info` and 7 `personal_update`. Confidence thirds are 18 posts each.
+Sections 6–7 were run headless with `run_three_seeds.py`, which executes the
+notebook's own cells and leaves `results.json` and `test_split.csv` untouched.
+
+- **Criteria 3 and 4 are properties of the dataset, not of a training run.**
+  They were not remeasured per seed. The same value is repeated in each
+  column (balance from `labels.csv`, agreement from
+  `data/cold20_agreement.json`).
+- **Criterion 1:** seed 7 lands exactly on 0.750 and meets the target. Seed
+  42 does not, so the criterion is missed.
+- **Criterion 2:** `personal_update` F1 is 0.000 on every seed. `question` and
+  `shared_info` meet their targets on seeds 7 and 2024 but not on seed 42.
+- **Criterion 5:** met on seeds 42 and 7 but not on 2024 (0.111). It was
+  MET for the single seed in Unit 5 and does not hold across three.
+- **Seed 42 reproduced Unit 5.** Its predictions, accuracy, F1 scores,
+  confusion matrix and confidence thirds match `results.json` exactly. Only
+  the mean confidence differs, in the fifth decimal place
+  (0.69757 vs 0.69756), from floating-point nondeterminism on MPS.
+
+The notebook's spread table:
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.679 | 0.750 | 0.786 | 0.107 |
+| Macro F1 | 0.434 | 0.520 | 0.561 | 0.127 |
+| F1 — `question` | 0.780 | 0.821 | 0.833 | 0.053 |
+| F1 — `personal_update` | 0.000 | 0.000 | 0.000 | 0.000 |
+| F1 — `shared_info` | 0.522 | 0.741 | 0.848 | 0.327 |
+
+**Stability:** accuracy moved 0.107 across seeds, more than 10 points. By the
+notebook's own rule, this test set is too small or too lopsided for a stable
+measure. The spread comes almost entirely from `shared_info` (F1 from 0.522
+to 0.848). The `personal_update` failure is the one stable result: F1 0.000
+on all three seeds.
 
 ### Confusion matrix
 
 <!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
      An image of a matrix earns nothing. -->
 
-| true \ predicted |  |  |  |
+Seed 42, as printed by notebook section 7 (rows are true labels, columns are
+predictions):
+
+| true \ predicted | question | personal_update | shared_info |
 |---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+| **question** | 32 | 0 | 0 |
+| **personal_update** | 7 | 0 | 0 |
+| **shared_info** | 11 | 0 | 6 |
+
+The other two seeds, from the same file:
+
+| Seed | `question` → `shared_info` | `personal_update` → `question` | `shared_info` → `question` | All other off-diagonal cells |
+|---|---|---|---|---|
+| 7 | 0 | 7 | 7 | 0 |
+| 2024 | 2 | 7 | 3 | 0 |
 
 **My biggest off-diagonal number, and what it means:**
 <!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
      direction. "7 real analysis posts were called hot_take and only 3 went the
      other way" is a direction, not just an error rate. -->
+
+On seed 42, 11 real `shared_info` posts were called `question`, and none went
+the other way. Almost every error, on every seed, runs in one direction:
+towards `question`, the majority label (58% of the data).
+
+- **`shared_info` → `question`:** this is where the seeds differ most (11,
+  7, 3). The model learns the `question`/`shared_info` boundary on some
+  splits and not on others. Only 2 posts in all three seeds went from
+  `question` to `shared_info`.
+- **`personal_update` → `question`:** the bigger problem. All 7
+  `personal_update` posts are called `question` on every seed, 21 of 21,
+  and the model never predicts `personal_update` at all. It has not learned
+  the `question`/`personal_update` boundary in either direction. It folds
+  the smallest label into the largest one.
 
 
 
