@@ -432,20 +432,53 @@ and ran the notebook.
 
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | 0.893 | 0.679 | -0.214 |
+| Macro F1 | 0.878 | 0.434 | -0.443 |
+| F1 — `personal_update` | 0.857 | 0.000 | -0.857 |
+| F1 — `question` | 0.933 | 0.780 | -0.153 |
+| F1 — `shared_info` | 0.842 | 0.522 | -0.320 |
+
+Baseline: `facebook/bart-large-mnli`, zero-shot, given only the definitions in
+`label_definitions.txt` (`baseline_results.json`). Trained: `distilbert-base-uncased`,
+fully fine-tuned, seed 42 (`results.json`). Both are scored on the same 56
+held-out posts in `test_split.csv`. Difference is Trained minus Baseline.
 
 **What I predicted before I looked:**
-<!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
-     prediction made afterwards isn't one. -->
+
+I predict that my fine-tuned DistilBERT will outperform the zero-shot BART baseline on overall accuracy, because it was trained on posts from the same fitness communities. However, I expect the improvement to be uneven across labels, particularly personal_update, which had poor performance during Unit 5.
 
 **What the gap actually means:**
 <!-- If the baseline matched your trained model, your fine-tuning added
      nothing — and that is a real finding, not a failure. Say it plainly. -->
 
+My prediction was wrong. The zero-shot baseline beat the fine-tuned model on
+every measure. BART reached 89.3% accuracy and DistilBERT 67.9%, a gap of 21.4
+percentage points. Macro F1 was 0.878 against 0.434. The largest gap is
+`personal_update`. The fine-tuned model found none of the 7 `personal_update`
+posts in the test split (F1 0.000), and BART found 6 of them (F1 0.857). As
+trained in Unit 5, fine-tuning made this classifier worse than using no
+training data at all.
 
+Why this happened is not yet known. Three plausible causes, none of them
+tested:
+
+- **Class imbalance.** Only 44 of 371 posts (11.9%) are `personal_update`,
+  so the model can reduce its loss by mostly predicting `question` (58.2%).
+  The confusion matrix shows it did exactly that.
+- **Too few examples.** 259 training posts, 31 of them `personal_update`,
+  and only 51 optimizer steps. Validation loss was still falling at epoch 3.
+- **Label quality.** 351 of the 371 labels were produced by an AI and never
+  reviewed by a person. Two of the three cold-20 disagreements sit on the
+  `question`/`personal_update` boundary, the same boundary the model fails on.
+
+**What this comparison does not show.** It does not prove that fine-tuning
+doesn't work for this task. The two models differ in more than training.
+BART-large-MNLI is a much larger model with different pretraining, including
+training on natural-language inference, and it read my label definitions
+directly. DistilBERT is a small distilled encoder that learned only from 259
+examples. The comparison does show that this fine-tuning run, with this data,
+did not beat a strong zero-shot model on these 56 posts. It is also one seed
+and one test split, where a single post is worth about 1.8 accuracy points.
 
 ---
 

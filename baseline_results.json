@@ -1,0 +1,314 @@
+{
+  "model": "facebook/bart-large-mnli",
+  "n": 56,
+  "seed": 42,
+  "held_out": true,
+  "used_definitions": true,
+  "scores": {
+    "n": 56,
+    "accuracy": 0.8928571428571429,
+    "f1_macro": 0.8775271512113617,
+    "per_label": {
+      "personal_update": {
+        "precision": 0.8571428571428571,
+        "recall": 0.8571428571428571,
+        "f1": 0.8571428571428571,
+        "support": 7
+      },
+      "question": {
+        "precision": 1.0,
+        "recall": 0.875,
+        "f1": 0.9333333333333333,
+        "support": 32
+      },
+      "shared_info": {
+        "precision": 0.7619047619047619,
+        "recall": 0.9411764705882353,
+        "f1": 0.8421052631578947,
+        "support": 17
+      }
+    }
+  },
+  "predictions": [
+    {
+      "text": "I ran a mile.\n\nIt's been roughly 3 months since I was diagnosed with sky-high blood pressure and renal artery stenosis. I also spent a night in the ICU after a false alarm for a stroke. (I was on a super strong blood pressure med for the night and it required continuous supervision.)\n\nSince then, I started taking walks. At first it was a quarter of a mile, then gradually pushed up to 5-6 miles, every day. Sometimes even up to 8-10 miles if time allowed.\n\nJogging started slow, as I could only handle about 1/8 mile at a time. [Insert knee strain injury here].  I worked up to 1/4 mile run + 1/4 mile walk for as many reps as I could handle for my daily routine.\n\nRucking once or twice a week was added and am almost at 40lbs of weight. (It hurts, but has taught me pain management.)\n\nSprints once a week for 10 seconds for about 5-8 reps somehow worked itself in to the routine. (Dunno where that came from.)\n\nFinally this evening, I ran a full continuous mile and celebrated with a round of sprints after that.\n\nI am 46 and hadn't ran a full mile in over 20 years. 3 months ago I thought I was going to die walking up a hill. Walking one solid mile was a huge milestone for me not so long ago.\n\nI guess the point of this post is just a checkpoint and a reminder to myself that things are actually getting better and there are more milestones to reach.\n\nCheers.",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Daily Step Counts of 4,000 or More Tied to Reduced Risk of Heart Disease, Mortality in Older Women | Mass General Brigham",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "LiftTrace v1.0.0-rc.4 released! FOSS alternative to Hevy, Jetfit & More!\n\nQuick update post for the new v1.0.0-rc.4 release.\n\nLiftTrace is a self-hosted lifting tracker I posted here a few days ago. It's an open, AGPL-3.0 alternative to subscription apps like Strong ($5/mo), Hevy ($6/mo Pro), Jefit ($7/mo Pro), Fitbod (~$80/yr), and the coaching tier of Trainerize / Caliber. Single Docker container, PWA plus a signed Android APK.\n\n**Repo:** https://github.com/TraceApps/lifttrace\n**Image:** `ghcr.io/traceapps/lifttrace`\n**Latest release (with APK):** https://github.com/TraceApps/lifttrace/releases/latest\n**Full changelog:** https://github.com/TraceApps/lifttrace/blob/main/CHANGELOG.md\n\n## What's new in v1.0.0-rc.4\n\n- **NutriTrace federation**: if you also self-host my sister app (NutriTrace), each completed workout's estimated calories burned auto-logs to your NutriTrace diary. Wearable data (Fitbit / Garmin / Health Connect) still wins for overlap so you don't double-count. Set up in Settings \u2192 Integrations \u2192 NutriTrace with a personal access token.\n- **Editable workout duration** on the completion summary: the Duration tile is now a button. Tap to pick from quick presets (30 / 45 / 60 / 75 / 90 / 120 min) or enter a custom value. Useful for the \"forgot to start the timer\" case, and the kcal estimate updates live.\n- **Fallback kcal estimate** when no duration was tracked, derived from completed set count and badged \"rough\" so you know it's less precise than a timed session.\n- **Persistent \"Connected\" pill** on the federation card so you can tell at a glance the integration is still healthy, plus a shared loading spinner across Diary, Programs, Coaching, Exercise detail, Statistics, and the Workout editor.\n- **Polish pass**: stronger affordance on the editable Duration tile, title-case sweep across about 20 button and menu labels, better error surfacing for Settings \u2192 Backup and Radio when the upstream isn't reachable, and a small wizard celebration screen at the end of first-run setup.\n- **Fixed**: workout-complete notification firing on every set toggle when re-opening a completed workout's summary (rc.3 caught the main flow; this patches the toggle edge case).\n\n## What's in it (full feature list)\n\n- **Diary** with sets, reps, weights, RPE, persistent rest timer that survives navigation, supersets, warm-up generator, and natural-language Smart Add (e.g. \"bench 3x5 @ 225, A1: curls 3x12 @ 30\").\n- **Programs**: build mesocycles, assign templates by day, progress through weeks.\n- **Exercises**: full library from wger, free-exercise-db, and exercisedb, plus your own custom entries with images, GIFs, or YouTube links.\n- **Statistics**: volume, PRs, frequency, body stats trends, RPE overlays, sparklines.\n- **Coaching**: trainers can prescribe workouts to athletes, leave per-set feedback, two-way reply threads. Replaces a Trainerize or Caliber subscription for small training rosters.\n- **Trace AI**: optional chat coach, multi-provider (Claude, OpenAI, Gemini, or any OpenAI-compatible endpoint like Ollama, LM Studio, DeepSeek, Groq). BYOK, opt-in, disabled by default.\n- **Radio**: built-in music player for Subsonic, Jellyfin, Plex, and Emby libraries plus Icecast, Shoutcast, and HLS streaming stations. Lockscreen controls, now-playing metadata, frequency visualizer on the FAB.\n- **OIDC SSO**: Authentik, Keycloak, Pocket ID, Authelia, Auth0, Google, anything OIDC 1.0. Multi-provider supported.\n- **Import** from Strong, Hevy, FitNotes, and Jefit CSV exports so you can leave your existing app in about a minute.\n- **Android**: local SQLite mirror with optional server sync, native ExoPlayer for radio, biometric sign-in, signed release APK on every release.\n\n## Deployment\n\n```yaml\nservices:\n  lifttrace:\n    image: ghcr.io/traceapps/lifttrace:latest\n    ports:\n      - \"3002:3003\"\n    volumes:\n      - ./data:/data\n    environment:\n      JWT_SECRET: ${JWT_SECRET}        # required in production\n      INSECURE_COOKIES: \"1\"            # only if not terminating TLS\n```\n\n`docker compose up -d`, browse to `http://localhost:3002/`, finish the first-run wizard. Full env-var reference, reverse-proxy examples (Caddy, nginx), OIDC setup, SMTP setup, and the four supported \"connecting from Android\" paths are in [DEPLOY.md](https://github.com/TraceApps/lifttrace/blob/main/DEPLOY.md).\n\nSigned APK SHA-256 is published with each GitHub Release for verification. Debug APK (accepts HTTP and self-signed certs) is `npm run android:debug` for LAN-only setups.\n\nNo telemetry, no analytics, no anonymous usage pings. The app phones home only to your own server, or doesn't phone home at all in Android local mode.",
+      "gold": "shared_info",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Mundane Fitness Goals\n\nWhat are some mundane goals you can recommend to someone trying to improve their fitness? For example, after watching a video while sitting down on the floor with my knees bent, I realised I could stand up without using my hands or resting my leg on the floor. It's indicative of core strength, right? I often do push-ups. So what else are some day-to-day actions that should become easier when  improving fitness and what exercises can you do achieve them?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "How reliable is the tdee calculator? According to the site I have to eat 200g protein per day when bulking. Is that roughly correct? https://tdeecalculator.net",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Routine Building - IOS App?\n\nI'm a bit new(ish) to working out and utilized a personal trainer to get me started over the last few weeks. I can't afford to continue using a trainer and was wondering if there was an app out there that helps you build a routine? I looked at Apple Fitness and I don't want videos, just something that can help build a routine such as - 3 sets 12 crunches, 3 sets of 8 standing overhead dumbbell presses, etc. Ideally it would just list out the exercise, number of reps/sets, etc. as a checklist that you can mark as complete as you go. Most apps I have come across are only videos. Any suggestions?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "These 4 Exercises May Be Key to a Good Night's Sleep",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "If you had $200 to spend on fitness, what would you spend it on?\n\nIt's a one-time payment. You can spend it on anything fitness or health related.\n\nEdit: I'm not looking for recommendations, I'm curious what YOU would spend it on.",
+      "gold": "question",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Mid-40s man. Is heart rate hitting low 180s during cardio safe, or should this be concerning?\n\nI'm in my mid-40s and I do cardio 3x weekly, and during my sessions, it's basically HIIT training. I try to keep my HR above 150 during my sessions, but it peaks in the low 180s intermittently.\n\nIs this okay? My doctor noted potential concerns with getting my HR up that high, but it could be fine, she wasn't sure. I don't get any dizziness or anything (generally that happens if I sustain a heart rate above 185 for a bit). I'm not staying at 180 bpm, that's just the peak, I'm targeting an average HR of around 150-155 for my workouts.\n\nIn a 60 minute workout, I'll probably spend 10-15 minutes with my HR between 166 and 182 range.\n\nNot sure if I should scale it down a bit or take it easier, or if this is fine.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "home pull up help\n\nI read that resistance bands on me can help me get going on pull up bars. Is there a specific kind or style or size I should get for these? Thanks all.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "What does it mean if I can perform 25% more reps on my 2nd working set of tricep exercises than my 1st working set of the same weight? And does it mean I'm failing my warmup sets or something else?\n\n(Age 40, male, 260 pounds, lifting diligently for just under a year)\n\nFor background, here is my post [23 days ago](https://lemmy.world/post/47515827) where I struggled to find a single tricep exercise that successfully targeted my tricep muscles. Thankfully I got good answers and played around at ridiculously light weights at high volume focusing on form and \"flexing\" my tricep during every rep especially during lockout to help my brain learn how to recruit tricep motor units. As a result, the most successful tricep exercise that \"works\" for me and isn't constrained by my limitations is assisted dips while keeping the body upright.\n\nThis makes me feel very fortunate because many fitness youtubers (Jeff Nippard and 2-3 others) argue that dips are arguably the best single tricep exercise followed closely by overhead cable tricep extensions, which I still struggle with but is a top priority that I'm focusing on for the next 3-4 weeks incorporating into my push day. The only other tricep exercise I feel I'm able to perform correctly and with acceptable form and good tricep targeting is the Close-Grip (slightly Incline) Bench Press however I struggle immensely with my elbows wanting to flare out and I have difficulty keeping them tucked in, especially my ~5% weaker left side elbow which brings me to my next question.\n\n##Question #2\n\nIf I can't do more than 6-7 good reps in clean form (with about 4-6 more in shoddy form) of the Close-Grip bench press, does this mean I need to lower the weight until I can do 12 reps in good form? Or does it mean I need to stop when my form gets bad after the 7th rep and compensate by doing more volume by doing more sets? My goal is functional tricep strength and/or hypertrophy but I would slightly prefer strength by a tiny margin. (as an aside, ai says [30-45 degree elbow flare is fine](https://claude.ai/share/ddef04ca-ecd7-4655-bd54-c17a78789107) apparently?)\n\nPrimary question (in title): What does it mean if I can perform 25% more reps on my 2nd working set of tricep exercises than my 1st working set of the same weight? And does it mean I'm failing my warmup sets or something else? My typical warmup routine is 5 minutes on treadmill at 3mph or 4.8kmh, 2 minutes of \"elbow circles\" (due to some men having proclivity for elbow pain when working triceps), and 1 warmup set of 40% - 50% weight of my working set for about 10 reps.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Weight lifting app\n\nHi everyone! What app are you using to track workouts weights reps etc? \r\n\r\nI was a fan of JEFIT but can\u2019t login to my account anymore. \r\n\r\nAnyone have another recommendation?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "260lb close grip bench pr! I think I strained a hamstring on this one lol",
+      "gold": "personal_update",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Finding your way out of a rut?\n\nI have the get up and go to run every other day or everyday for maybe two or three months at a time. Then, out of the blue, I'll skip a run, then two runs, then the whole week.\n\nI'm currently in one of these ruts(I'm lacing up my shoes right now, I swear) but I was just wondering if anyone has any strategies for getting out of it. Mine is brute force my way back into it until I'm back in the groove. But this usually ends with me doing too many miles too quickly. Then the injury, the the time off, oh the cycle repeats.\n\nWhat are your strategies for getting out of a rut? Or even better not getting into it in the first place?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "How can I figure out if I need kcal surplus or deficit ?\n\nHey, im skinny fat... currently 83 kg, started last year at 83.9 kg, droped to 75.5 kg and since july slowly going up in kgs sgain\n\nI was able to do 1 Wide Grip Pull Up and 0.5 Close Grip this time last year. Now I can do 5x6-8 weighted Neutral Grip Pull Ups with about 5 kgs on me.\n\nSo I must have also gained muscle.\n\nBut if I look in the mirror I still didnt change lol.\n\nIm 175 cm, 83.3 kg now and male. Id say thin arms, belly,...\n\nHere is a pic for reference if me.\n\nWhat would you guys do if you were me?\nSkinny arms, fat belly/ chest, skinny legs.\n\nWorking on few key lifts...\n- Overhead Barbell 5RM is 45 kg\n- Bench Dumbbells is 5RM 27.5 kg\n- Barbell Squart 5RM 80 kg\n...\n\nSo not very strong either lol. I think I barbell Benchpress 65 kg for 5 Reps Max :(\n\nTrying to hit 2800 kcal a day and about 2g protein per kg/ bodyweight.\nDoing upper lower splitwith  cardio zone 2 on wednesday and saturday",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "\u2018Watching my six year old deadlift 35kg was pretty cool\u2019: meet the children who work out",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "leg day exercise might be too much\n\nHello everyone,\n\nI'm wondering if might be over doing it and prohibiting growth.\n\nI started two months ago.\n\nHere is my leg day. Only once per week.\n\n- Jog or bike 10mins. Basically warm up until sweat.\n- squats: 4x10\n- dead lifts: 5x5\n- leg curls and or leg press 4x10. I skip when these are unavailable.\n- bike ~30mins. I'm not sure if I should remove this one. It's interval training with the purpose of recovery improvement / fitness. So, by interval I mean one minute hard spin (higher resistance) and one minute lowish-medium resistance. I start with 5 min spring. Then 5 sets of this interval. Then, 4 minutes spin at same low-medium resistance, then another 5 sets or less. I'm usually beat after this.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Scientists Find That \u201cProtein Hunger\u201d Drives Overeating, Obesity\n\nGrowing evidence that highly processed and refined foods are the leading contributor to rising obesity rates in the Western world is backed by a year-long study of the dietary habits of 9,341 Australians.\n\nBecause so much of modern diets consist of highly processed and refined foods \u2013 which are low in protein \u2013 people are driven to consume more energy-dense foods until they satisfy their protein demand.",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Privacy Food Tracker For iOS | Alternative To Myfitnesspal\n\nFoodnoms is a calorie, water, caffeine, all in one food tracker. That tracks your food but not you, it requires no signup and doesn't sell your data",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "The MOST SURPRISING Home Gym Equipment Releases This Year!\n\n* Centerpiece (Squat Rack/All-in-One Trainer): The Force USA 20\n*  Adjustable Dumbbells: The MX Select Evo dumbbells\n* Bench: The Freak Athlete ABX\n* Barbell: The Rogue Ohio Power Bar\n* Bonus: The Quantum Free Trainer\n\nAnd there's me looking at the short and wondering who has space for any of this?",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "If tomorrow I do sets of 3 reps of 85% of my 1-rep max with 5 minute rests (as many sets as possible), what info will my number of sets tell me? Or is an entirely useless benchmark to track?\n\n(Age 40, male, 260 pounds, seated dumbbell shoulder press, lifting diligently for just under a year)\n\nI am taking a rest day today because I have way too much systemic fatigue apparently. I have been doing seated shoulder presses almost daily for triples (sets of 3 reps) all year, typically for 1-2 sets but occasionally more. It's my favorite exercise and it's the only lift I actively work towards getting stronger at. (my other lifts have gone up some but less as a percentage) Here is my workout from yesterday and all previous workouts this month follow a similar volume:\n\n> Jun 5th 2pm\n>\n> Shoulder Press DB\n> * 3 reps x 55lbs\n> * 3 reps x 55lbs\n>\n> Close-Grip Incline Bench Press\n> * 5 reps x 115lbs\n> * 5 reps x 115lbs\n>\n> (45 minute mcdo break)\n>\n> Shoulder Press DB\n> * 3 reps x 55lbs\n>\n> Close-Grip Cable Row\n> * 3 reps x 187lbs\n>\n> EZ-Bar Curls\n> * 2 reps x 100lbs\n>\n> 10 minute rests, moderate glycogen levels estimated\n>\n> 6pm 2 sets of 45lb kettlebell swings for 15 seconds each\n>\n> 7pm 40 minutes of zone-2 cardio\n\nMy 1-rep max early last month was with the 60-pound dumbbells but I only achieved that once in my life, and I've failed to get 60 pounds twice since then, so I'm estimating that my true 1-rep max is closer to 58.8 pounds, of which taking 85% yields 50 pounds.\n\nYesterday I was able to successfully perform 2 triples (2 sets of 3 reps) with the 55-pound dumbbells with a 10 minute break in between, which was the first time I've been able to accomplish that. Prior to yesterday, I could only get 2 reps on my 2nd set following a 10 minute rest using the 55-pound dumbbells.  I absolutely would not have been able to do a 3rd set of 3 reps with the same weight yesterday after another 10 minute break because it mentally crippled me and I felt useless all day yesterday after my morning gym session, which is why I'm taking a rest day today.\n\nTomorrow, my goal is to be able to get at least 10 triples (10 sets of 3 reps) using the 50 pound dumbbells but hoping for 20 or 30 sets of 3 reps since the 50 pound dumbbells feel very light/easy in comparison to the 55 pound dumbbells. However, I've never done more than 4 sets per day of the same exercise so my goal might be unrealistic. It's just what I want to do tomorrow, which is my reason for posting.\n\n**TL;DR:** If tomorrow I do sets of 3 reps of 85% of my 1-rep max with 5 minute rests (as many sets as possible), what info will my number of sets tell me about my strength endurance or my conditioning or my physiology? Or is an entirely useless benchmark to track?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Fitbit and Strava may be tracking more than your run",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "A 15k followed by a free brunch in a running store in Montreal\n\nThe free brunch is every week",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "The Vans are out\n\nI've been walking 4.5 miles a day, 5 days a week since Jan 2nd. As of today, I have lost ~53 pounds, gone from being pre-diabetic to normal levels, lost my entire wardrobe in the process, and finally my Vans died. They have been loyal a.f. \r\n\r\nGlad they helped me on this journey to better health.",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Where to get stainless steel barbells and other equipment in the EU?\n\nHey guys, I have been looking at building a home gym (possibly outdoors) in my new house we are renovating.\n\nI want to get back into lifting as it has been about 4 years since I did it seriously.\n\nI was looking at bars and the market here is ridiculout it seems. I can't find a single stainless steel bar for under 475\u20ac($520). The Ohio bar is one of the cheaper ones at 550\u20ac instead of $370. Of course I get why it is more expensive for an import bar, but I literally can't find any bar here non-imported that says that it is stainless steel that isn't calibrated and insanely expensive (550\u20ac+)\n\nThe difference here betweeen cerakote and stainless is even greater (>100\u20ac in some cases).\n\nI was hoping to just get a second hand rack, some basics weights, and a barbell for around 1000\u20ac or so, but it looks like I would have to spend at least 2000\u20ac to get any kind of setup. Cage here are 850\u20ac or so on the lower end just by themselves.\n\nI am looking at strengthshop.eu, roguefitness.eu, fitness-seller.nl, but I don't really know what are the best bang for your buck options.\n\nIt looks like one of those sites has a 340\u20ac stainless steel ATX bar, but I don't know if that is a reliable brand.\n\nAnyone in the EU with any advice?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "[YouTube] There's no known upper limit on per-meal protein intake\n\nThis is a video about Jorn Trommelen's recent paper: https://pubmed.ncbi.nlm.nih.gov/38118410/\n\nThe gist of it is that they compared 25g protein meals vs 100g protein meals, and while you do use less of it for muscle protein synthesis at that quantity, it's a very minor difference. So the old adage still holds: **Protein quantity is much more important than timing**.\n\nWhile we're at it, I'd also like to share an older but very comprehensive overview of protein intake by the same author: https://www.strongerbyscience.com/athlete-protein-intake/",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Suggest me some Apps\n\nSuggest me some Home Workout app that doesn't require to be always online.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Fitbit Public Preview adds food & water logging, more as app redesign comes to free users\n\ncross-posted from: https://lazysoci.al/post/45371036",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "What fitness tracker do you use that supports easy data export?\n\nI'm thinking about getting a fitness tracker to use together with [endurain](https://endurain.com/). Garmin trackers apparently support automatic synchronization with endurain, but they are very expensive.\n\nWhat fitness tracker do you use that supports simple data export in a common format?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Where did you guys learn proper form of exercises?\n\nI go to the gym a long time now but it seems like no one ever teached me how to do proper form on exercises.\n\nYeah I can watch youtube videos, but it still doesn't feel right.\n\nMy gym only has staff with 0 clue besides on machines, so I can't ask them. And I don't want to bother strangers.\n\nMy current way to deal with this is go to the gym at 4 am in the morning and hope no one is at the gym so I can just play around without people staring at me.\n\nBut then I am afraid to try a dead lift cause if something happens what then?\n\nWas thinking about asking a member at the gym who looks decent to show me everything and I just pay him 50 $ but that seems kind of weird.\n\nI can do a few basic exercises like Benchpress, Lat pulldowns etc. but I'd never squat with barbells or dead lift or anything like that cause it just looks like I'd break my back on accident. But those exercises seem to be the best and shouldn't be skipped (atleast what I read)\n\nI really think my social anxiety is holding me back on this part of the gym. I know everyone says: \"No one cares what you do they are focused on themselves\" but lets be honest, people stare and wonder what you are doing... it's just what it is.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Timing app?\n\nShort: I am looking for (foss) recommendations for an app that lets me program various time intervals and then does some notification when they are up.\n\nSo last November when the after work cycling season froze up I finally went to the gym, got me a membership at the one with the most group activities/classes(?) because I like committing to a schedule and to be told what to do. Also the group energy does help me pushing. But I started looking at the quite well equipped gym and somehow I got kettlebells in my youtube recommendations. And then other strange stuff like EMOM and AMRAP.\n\nAnd the gym have no good clocks...\n\nSo when (pretty much always) I want to do some AMRAP (conditioning?) I have to rely on my clock. But its timing programming is really limited, essentially just active/rest. So I need something more robust and after a cursory look at apps I have found nothing. I NEED recommendations.\n\nExample: I want to program a AMRAP session of 1 minute active, 15 seconds reset to next move(?). Do that for 5 cycles. Then a 2 minute break. And start from the bottom. Just an example.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Are deload weeks necessary?\n\nI've been doing yoga for over 2 years multiple times pretty much every week and I restarted weightlifting for mostly hypertrophy dec 2023 after not having done it for 5 years. I've never put that much thought towards \"deload weeks\" where you take a full on break for a week in order to have your body recover a bit better. Are these a necessity or what are your thoughts towards it?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "IPF Rule changes (Jan 2026)\n\ncross-posted from:  https://lemmy.ca/post/58096221\n\n> Changes are highlighted in red.\n>\n> Most notably, there seems to be three rule changes relating to technique:\n> - Squat: Must use a full grip. Thumbless grip is no longer permitted. There's also a minimum height for bar position now.\n> - Bench press: No sink-and-press\n> - Deadlift: Clarifications on what it means to lock out with your shoulders back.",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Do you really need to do dedicated 'leg' or 'arm' days?\n\nI've been going to the gym for a few months, still feel like a noob tho.\n\nI track what exercises I do, weight &amp; reps, etc, and try to rotate between the different exercises I enjoy.\n\nHowever I don't do leg-centric days or anything like that, I just try and do a variety each week and not go too long without exercising specific areas. Is that bad?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "I'm getting bored of weightlifting. What should I do?\n\nI've been lifting consistently for about 18 months. In that time, I did 5/3/1 for Beginners and GCZLP.\n\nI can squat 200 5x3, bench 145 5x3. I do lower weight deadlifts because I hurt my lower back last year doing them. I avoid overhead pressing because of right shoulder impingement.\n\nI do accessory exercises as well.\n\nI find myself getting bored doing these exercises. I want to continue to build muscle and strength, but I am not sure what to do.\n\nI like to run but I am working through an injury so I am progressing slowly to get back to where I was a year ago.\n\nWhat do you suggest I do?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Are there any open source Strava alternatives?\n\nI've found lots of great open source workout tracking apps, but I'm looking for a program that can show me my times on popular segments like certain bike trails, just as Strava does. Are there any free (and hopefully open source) alternatives?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Is Cronometer Gold worth it?\n\nI've been using it to track my nutrition and it's actually a decent app. Well the functionality is. I hate the fact that it's not Android native as certain things are harder than they need to be, like editing text. But the underlying service is fantastic. I don't see ads as they're blocked at the network level, but I really want the ability to export reports to PDF rather than having to screenshot everything and stitch those together manually.\n\nAnyone using it? Is it worth it?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "'I spent \u00a32,000 on one event'. Why Gen Z is obsessed with Hyrox",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "I've run a half marathon\n\nI just want all of you to know that I've run a run a half marathon. Think I may even be obligated to do so. Was it also a trail one? Yes! Did I also not finish in the last 25%? Yeah!\n\nHonourable mention to the guy in the rear finishing at about 4h30min. But he did it! Extra cheers to him!",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Thoughts on this training plan (hypertrophy)\n\nHey, I was reading a lot lately and built myself a new plan after I followed my other one since weeks.\n\nIt's a simple 6-day Push/Pull/Legs -\nA/B rotation with a weekly rep scheme progression in it.\n\nRep ranges  rotate forward for each version every inbetween each version (picture).\n\nExercises I have chosen:\n\nPUSH A\nBarbell Bench Press\nSeated Dumbbell Shoulder Press\nCable Chest Flys (mid-chest)\nLateral Raises\nCable Triceps Pushdowns\nEZ Bar Skullcrushers\n\nPUSH B\nDumbbell Bench Press\nIncline Barbell Press\nDumbbell Flys (flat bench)\nDips\n\nPULL A\nChest-Supported Rows\nLat Pulldown\nFace Pulls\nRear Delt Flys\nEZ Bar Curls\nIncline Dumbbell Curls\n\nPULL B\nPull-Ups\nSeated Cable Rows\nStraight Arm Pulldowns\nReverse Pec Deck\nHammer Curls\nPreacher Curls\n\nLEGS A and B currently same:\nLeg Press\nBulgarian Split Squats\nLeg Extensions\nLying Leg Curls\nStanding Calf Raises",
+      "gold": "question",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "If you see someone lie about their high-risk underlying conditions, no you didn\u2019t \ud83d\udc89",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Les Mills\n\nIs anybody using the workout on demand program? I am curious how it is. Looking mostly for strength, core, yoga, HIIT, indoor cycle and treadmill workouts.\nAlso do they have some trial offer?",
+      "gold": "question",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Can you recommend me some calisthenics programs?\n\nI am a bit of overweight guy and I don't know anything about lifting and fitness. I can't go for strength due to very weak joints. (no loaded squats) I would like to go for body building or hypertrophy training. Some pointers, tutorials and links to resources are welcome.\n\nAs equipment goes I only have resistance bands, a bicycle and an outdoor gym.\n\nAlso how important is a diet in keeping myself fit?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Walking is life\n\n(english is my second language)\n\nI have multiple causes contributing to a terrible health/mind health. Found the cure in an unexpected way. Three months ago, I started walking 30mn ago just to move a bit.\nDecided to up the steps, and I went from 2k to 15/20k daily divided in two daily walks.\nFelt good immediatly (happy chemicals), persisted, now it feels even better and it lasts long.\nI used to suffer non stop mental & physical torture, these are all gone.\n\nAnd thats just the tip of the iceberg. I also lost weight and I multiply new healthy habits, slowly but surely.\n\nI used to rely on ADHD meds for peace of mind&body. In fact I was living for the meds and they were a lie, by that I mean 1/2 hours of feeling (too: mistakes) good followed by hours long anxiety comedown or repeated redoses.\n\nMotion is lotion.",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Library of exercises somewhere?\n\nHello,\n\nI am looking for a place where I can find alternative exercises of my training plan.\n\nI am slowly planning my next workout cycle and I would like to replace some exercises that I don't like.\n\nAnd I would also like to learn what muscles the exercises on plan actually do. I know the targetted muscle, but I would also like to know the secondary muscles that are worked as well.\n\nThanks",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "Went back to going to the academy recently, already noticing some improvements!\n\nThough still on the weaker side, today I was able to pull 5 more kg in about half of the exercises, and been going there somewhat sporadically. Luckily my job compensates for when I don't or can't go.\r\n\r\nSeeing progress surely is uplifting.  \r\n*\u266a happy auster noises \u266a*",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Relevance of step counting?\n\nHi there, for a few months now i own a treadmill for my desk. It does alot for my overall wellbeing, but reliably counting steps there is quite a challenge.\n\nOne thing that seems to come close is my old iPhone, but as climate in this room is getting hotter as spring approaches, this is not a fun solution. (phone will annoy in lighter pants)\n\nThings that heavily over and undercount include:\n* Garmin HRM Pro (count way too low)\n* Fenix 3HR in pants (both directions depending on chosen pants and pockets)\n* Fenix 3HR on ankle (way too low)\n* Stryd Pod (oh well that exposes no steps at all, darn it)\n\nI read from time to time how at least Apple finds step counting and goals to be a bad and lowprio metric.\nI see that at least the Athlytic app does not use steps but rather the heart for calculation of target exertion and reached exertion (eventho i wonder sonetimes if exertion is too high on the treadmill).\n\nThis leaves me with the question if i should just ignore that a stepcount exists at all. I wont be filling any rings while regularily wearing the Apple Watch at all anyway.\n\nIs there some important metric i might be missing that would suffer?",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "I got my first pull-up!\n\nI don't know where else to share this, but I'm so proud of myself so I've gotta post it somewhere. I've finally got my first unassisted pull-up! It wasn't a goal I was working super hard toward, but I've noticed a lot of new muscle definition in my back, probably because I do a lot of rows, especially bird-dog rows and renegade rows. So I tried a pull-up and I was able to do one pretty easily! Not bad for a middle-aged lady! Now I've got a goal to do three. :)",
+      "gold": "personal_update",
+      "predicted": "personal_update"
+    },
+    {
+      "text": "Am I wasting my time if I apply \"greasing the groove\" (low RPE, 3 reps per day) for cable lateral raises if my goal is strength? Is Jeff Nippard correct that side delts respond best to high volume?\n\ntl;dr of GtG below:\n\n * \"Greasing the Groove\" (GtG) is a strength training technique popularized by Pavel Tsatsouline that involves performing high-frequency, submaximal sets of a specific exercise throughout the day to improve neural efficiency. By doing many easy sets (50\u201370% of max) with long rest periods, you build strength without fatigue.\n\nI am mostly a beginner (male, 40, 250lbs, 6'4\") and still have unfinished \"newbie gains\" that I've yet to achieve in most of my muscle groups. My side delts are very weak. I use the [raised handle setup](http://youtube.com/watch?v=f_OGBg2KxgY) advocated by Jeff Nippard and many other youtubers but I struggle and consider it one of my weakest exercises. Here was my [fully rested gym session](https://i.imgur.com/ObRwnrm.png) a few hours ago where I mostly am attempting a GtG style because my goal is primarily weight loss and minimizing fatigue. I want to continue losing 30 pounds before I abandon a GtG style of splits.\n\n * 8 reps x 15lbs (cable lateral raise, today)\n * 3 reps x 20lbs (cable lateral raise, today)\n\nIn keeping good form, I estimate I can do 20lbs for a maximum of 6-7 reps (in good form) at cable-height \"8\" at my gym, so my question today is whether I'll gain strength if I do 3 reps of 20lbs daily for the next 3 months? To be more specific, am I likely to be able to achieve 6-7 reps (in good form) with 25 pounds, representing a 25% strength increase in my side delts? Or is 1 set of 3 reps daily a waste of time for side delts and I won't get 25% stronger side delts in the next 90 days using this protocol?\n\nAs an aside, my front delts responded extremely well to GtG training these past 3 months.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "This 80-year-old man lives in a war zone. He goes for a run every morning",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "If You Feel Like Nothing Works for Your Back Pain, Science Says You're Right",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Do you log all Biceps Curl variants under one Exercise Entry or multiple ones?\n\n- Preacher / Hammer\n- Dumbbell / Barbell\n- Machine\n- Seated / Standing\n- etc.\n\nDo you write it down as Biceps Curls or do you log them separately.\n\nI use Flexify. Flexify shows the history of a class but not related ones. Hence, I don't see the history if I log them separately.",
+      "gold": "question",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "New Study Uncovers Hidden Dangers of the Keto Diet\n\nKeto is too destructive to muscles, it's only appropriate for people who need to lose weight or die, you want something like Leangains with high protein and carbs low fat intermittent fasting. High thermogenesis. You can do that on a caloric surplus or deficit and not lose muscle as long as you exercise",
+      "gold": "shared_info",
+      "predicted": "shared_info"
+    },
+    {
+      "text": "Can I think of creatine as a phosphate holder/transporter?\n\nThat seems to be what the complicated explanations boil down to.",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "While maintaining a weekly calorie deficit, is it possible to have a large calorie surplus on (or before) the day you wish to replicate your 1-rep-max numbers on your 3 favorite exercises?\n\nI've only been dieting for 6 days, but I already noticed a pretty dramatic drop in gym performance and I\u2019m trying to figure out if there\u2019s a smarter way to structure my diet.\n\nFor context, I\u2019m lifting in a calorie deficit (about 700 calories/day as a 270 pound male) and eating very low carb (under 20g carbs/day). Earlier this month, I was able to reach my lifetime goal of seated shoulder press with 60 pound dumbbells, which is probably my favorite exercise and the only lift I care most about preserving.\n\nAll week, I felt noticeably weaker and so I took a rest day yesterday, got plenty of sleep, and repeated my same exact morning routine from earlier this month when I finally hit my shoulder press strength goal on May 8th. (protein shake and banana 30 minutes after getting out of bed then gym 90 minutes later)\n\nIf I maintain a weekly calorie deficit of 3500 calories, is it possible to strategically have 1 (or maybe 2) higher-calorie days per week? Something like:\n\n * Friday thru Tuesday 1000 calorie deficit\n * Wednesday 500 calories surplus\n * Thursday 1000 calorie surplus\n * Do my strength workout on Friday morning after protein shake and banana\n\nWould something like this work? I just grabbed these numbers out of thin air and would appreciate any guidance today on how to maintain strength while losing 1 pound per week. \ud83d\udcaa",
+      "gold": "question",
+      "predicted": "question"
+    },
+    {
+      "text": "What's a good FOSS workout/gym tracker on android?\n\nI used to use Iron on iOS, which a very minimalist, open-source gym tracker, that does what I needed it to, in a very simple way. It allowed me to create workout plans, I could edit/add new workouts and machines, and had rest timers. During the workout I was able to log reps to my sets I've set during the workout routine setup.\n\nI've switched back to android recently, and this app is the only thing I really miss. The closest I got was Flexify, but for some reason, when I finish a workout, the plan doesn't reset, so next time I open the plan, it'll be pre-filled by last time's data. Other than this, it seems to do what I need it to do. Does anyone have a recommendation? Or is there something I miss about Flexify?",
+      "gold": "question",
+      "predicted": "question"
+    }
+  ]
+}
