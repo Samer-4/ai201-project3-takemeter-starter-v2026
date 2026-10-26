@@ -782,17 +782,78 @@ dataset.
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Test accuracy | ≥ 0.75 | 0.821 | 0.786 | 0.786 | **MET** |
+| 2. Per-label F1 (`question` / `shared_info` / `personal_update`) | ≥ 0.80 / ≥ 0.60 / ≥ 0.50 | 0.857 / 0.812 / 0.600 | 0.829 / 0.857 / 0.000 | 0.818 / 0.872 / 0.000 | **MISSED** |
+| 3. Balance in `labels.csv` (largest / smallest) | ≤ 65% / ≥ 15% | 58.2% / 11.9% | 58.2% / 11.9% | 58.2% / 11.9% | **MISSED** |
+| 4. Cold-20 agreement, human vs blind AI | ≥ 15/20 | 17/20 | 17/20 | 17/20 | **MET** |
+| 5. Confidence gap (most- minus least-confident third) | ≥ 0.15 | 1.000 − 0.444 = 0.556 | 0.944 − 0.500 = 0.444 | 0.944 − 0.556 = 0.389 | **MET** |
+
+From `results_three_seeds_after.json` (`RUN_LABEL = "after"`,
+`CLASS_WEIGHTED = True`). The seeds, the splits and the 56 test posts per
+seed are the same as the before-run, so each seed is a paired comparison.
+Criteria 3 and 4 are dataset properties and are repeated, not remeasured.
+For criterion 2, `question` and `shared_info` now hold on all three seeds;
+only `personal_update` misses.
+
+Spread table from notebook section 6:
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.821 | 0.786 | 0.786 | 0.036 |
+| Macro F1 | 0.757 | 0.562 | 0.563 | 0.195 |
+| F1 — `question` | 0.857 | 0.829 | 0.818 | 0.039 |
+| F1 — `personal_update` | 0.600 | 0.000 | 0.000 | 0.600 |
+| F1 — `shared_info` | 0.812 | 0.857 | 0.872 | 0.059 |
+
+Seed-42 confusion matrix after the change, from notebook section 7 (rows are
+true labels):
+
+| true \ predicted | question | personal_update | shared_info |
+|---|---|---|---|
+| **question** | 30 | 0 | 2 |
+| **personal_update** | 4 | 3 | 0 |
+| **shared_info** | 4 | 0 | 13 |
+
+**Before vs after, same seed and same test posts:**
+
+| Seed | Accuracy | Macro F1 | `personal_update` F1 | `shared_info` → `question` | `question` → `shared_info` |
+|---|---|---|---|---|---|
+| 42 | 0.679 → **0.821** | 0.434 → **0.757** | 0.000 → **0.600** | 11 → 4 | 0 → 2 |
+| 7 | 0.750 → **0.786** | 0.520 → **0.562** | 0.000 → 0.000 | 7 → 2 | 0 → 3 |
+| 2024 | 0.786 → 0.786 | 0.561 → 0.563 | 0.000 → 0.000 | 3 → 0 | 2 → 5 |
 
 **Did it help, and how do I know:**
 
 <!-- If it didn't, say so. Relabelling that didn't help is a genuinely
      interesting result and earns full credit. -->
 
+**Mixed. It helped overall, but it did not fix the problem it was aimed at.**
+
+- **What improved:** two more criteria now hold on all three seeds. Accuracy
+  (criterion 1) is ≥ 0.786 on every seed, and the confidence gap
+  (criterion 5) is ≥ 0.389. `question` and `shared_info` F1 now meet their
+  targets on every seed. Accuracy is also much more stable: its spread fell
+  from 0.107 to 0.036. Because the seeds and test posts are identical
+  before and after, these are paired comparisons, not different draws.
+- **What didn't improve:** `personal_update`, the reason for the change. It
+  worked on seed 42 only, with 3 of 7 found and no false positives
+  (precision 1.00, recall 0.43, F1 0.600). On seeds 7 and 2024 the model
+  still never predicts `personal_update` at all. Criterion 2 is still
+  MISSED.
+- **Where the gains actually came from:** mostly the `question`/`shared_info`
+  boundary. Far fewer `shared_info` posts were called `question` (11/7/3 →
+  4/2/0), at the cost of a few more errors the other way (0/0/2 → 2/3/5).
+  Down-weighting `question` mainly loosened the model's grip on the
+  majority label for `shared_info`, which has 77 training examples. The 31
+  `personal_update` examples, even with a weight of 2.79, were only enough
+  on one split.
+- **Against my prediction:** I expected `personal_update` recall to rise on
+  at least some seeds; it rose on one. I expected accuracy to stay about
+  the same; it rose on two seeds and held on the third.
+
+The validation loss in the training log is weighted now, so it can't be
+compared with the before-run's validation loss. The test metrics above are
+unweighted and can be compared directly.
 
 
 ---
